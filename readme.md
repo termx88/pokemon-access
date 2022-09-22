@@ -1,14 +1,33 @@
-# PokÈmon Access Walk To Item
+# Pok√©mon Access Autowalk
 # Version 3.0.1
 
+## Description Of Autowalk features
+Key bind for walking to camera is "w". Key bind for walking to the selected item is "i". 
+Walking can be stopped by pressing a controller key. As in A, B, Select, Start, L, R or a direction key. When walking to item, it will try activating the destination when it can't be passed. Such as an NPC or signpost. Will activate NPC's behind counters.
+Deals with HM tiles appropriately by type. In Red/Blue/Yellow, HM tiles have to be activated from the pokemon selection menu, so HM tiles have to be manually activated.
+
+### Extra notes on the way different HM tiles are treated: 
+* Presses A on bushes, when entering water, whirlpool. 
+* Does not press A when going up a waterfall, because there's no way to make sure player is actually facing it. 
+* Does go down waterfalls. 
+* Doesn't find a path through boulders.
+
+### Known problems of the script
+* New messages are untranslated.
+* In Yellow will walk into player's pikachu before activating it. When pikachu is standing on an entrance, this results in walking into a building. Haven't filter out destination by sprite, because there are non-player pikachu.
+* Camera can't walk beyond a map connection. (reading path results in crash in this and 3.0.1)
+* Because frame values are tweaked for individual games. In cases where walking values differ, such as crystal clear's bike, the walking is sub optimal, but does still work.
+* on_map function's changes don't perfectly filter out menus. In Red/Blue/Yellow's pokedex data screen, area map and town map returns true. Which crashes. In Gold/Silver/Crystal pokedex, maps, and PKHeX badges screen. Which doesn't crash, but it might start pressing buttons as if walking. It's possible to accidentally fly to a semi random location. Or change selection in flying map or pokedex.
+
+# Beyond here is the Standart Pok√©mon Access Readme
 ## Introduction
 
-The Pokemon access project is an improved version of the Pokecrystal Access Project, a set of scripts which initially provided access to PokÈmon Crystal for people using a screen reader.
-The goal of this project is to extend this functionality throughout all the PokÈmon games. Current version has support for the following games, but in the future it will include, if it's possible, support for more games unified into this script.
+The Pokemon access project is an improved version of the Pokecrystal Access Project, a set of scripts which initially provided access to Pok√©mon Crystal for people using a screen reader.
+The goal of this project is to extend this functionality throughout all the Pok√©mon games. Current version has support for the following games, but in the future it will include, if it's possible, support for more games unified into this script.
 
--PokÈmon Red, Blue and Yellow.
--PokÈmon Gold, Silver and Crystal.
--PokÈmon Fire Red and Leaf Green.
+-Pok√©mon Red, Blue and Yellow.
+-Pok√©mon Gold, Silver and Crystal.
+-Pok√©mon Fire Red and Leaf Green.
 
 These scripts are designed to work with the VBA-ReRecording GameBoy emulator.
   
@@ -17,9 +36,9 @@ These scripts are designed to work with the VBA-ReRecording GameBoy emulator.
 
 2. Get a compatible rom. Currently, the script supports the following:
 
--PokÈmon Red, Blue and Yellow: : English, French, German, Italian and Spanish.
--PokÈmon Gold, Silver and Crystal: English, French, Italian, Spanish and Brazilian Portuguese (crystal only).
--PokÈmon Fire Red and Leaf Green: English (version 1.0) and Spanish.
+-Pok√©mon Red, Blue and Yellow: : English, French, German, Italian and Spanish.
+-Pok√©mon Gold, Silver and Crystal: English, French, Italian, Spanish and Brazilian Portuguese (crystal only).
+-Pok√©mon Fire Red and Leaf Green: English (version 1.0) and Spanish.
 
 3. After you have the desired rom, extract and run VBA.
 
@@ -77,7 +96,7 @@ In the future, you'll have a more intuitive in-game feature to manage HackRoms. 
 You've loaded a ROM that the script detects as "Language not supported" or "Game not supported".
 You return to the game ignoring the previous result... but wait, if you try to execute any script command you'll only get the message "Script not loaded". Okay, let's fix this...
 
-1. With the incompatible game running, press shift+0. A window will show up, asking you for a "base game folder". This, in other words, is the base game script that this incompatible game will use. You'll have to access the lua/game folder, and here you'll see all compatible scripts. Keep in mind that you have to tell the script the exact folder name. For example, if you want to use the red/blue script, you'll write 'red_blue'; if you want to use the pokÈmon crystal script you'll write crystal, etc...
+1. With the incompatible game running, press shift+0. A window will show up, asking you for a "base game folder". This, in other words, is the base game script that this incompatible game will use. You'll have to access the lua/game folder, and here you'll see all compatible scripts. Keep in mind that you have to tell the script the exact folder name. For example, if you want to use the red/blue script, you'll write 'red_blue'; if you want to use the pok√©mon crystal script you'll write crystal, etc...
 2. When you type the base folder name and press "OK", if the folder is valid the script now asks you for a language for the spoken messages (not for the game names, those are into the data folder). You have to enter a valid language (see languages available inside the messages folder) and put your prefered one (en, es, it...).
 3. When you type the language and press "OK", if the language is valid the script now asks you for a data folder. You have to enter a name of a valid data folder. This is the folder which containts the LUA files for the game (maps.lua, sprites.lua, memory.lua...). This folder must be inside the base game folder.
 4. When you type the language code and press "OK", if the language is valid the script will restart automatically and load the new data.
