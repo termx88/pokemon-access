@@ -86,11 +86,12 @@ end
 -- Returns true or false indicating whether we're on a map or not.
 function on_map()
 local mapnumber = get_map_id()
+local textbox_top, textbox_bottom = get_textbox_border(5)
 if mapnumber == 0xff 
 or in_battle()
 or get_textbox_line()
-or screen.menu_position ~= nil then
-or screen.tile_lines[6]:find(textbox_top) and screen.tile_lines[12]:find(textbox_bottom)
+or screen.menu_position ~= nil 
+or screen.tile_lines[6]:find(textbox_top) and screen.tile_lines[12]:find(textbox_bottom) then
 return false
 else
 return true

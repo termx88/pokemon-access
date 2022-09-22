@@ -435,13 +435,6 @@ local path = find_path_to(obj)
 return path
 end
 
-function read_pathfind()
-local path = pathfind()
-if path ~= nil then
-read_path(clean_path(path))
-end
-end
-
 function read_item(item)
 local x, y = get_player_xy()
 local map_id = get_map_id()
@@ -477,7 +470,7 @@ return group_unique_items(new_path)
 end
 
 function format_hm_command(command)
-return command .. " " .. message.translate("on_way") .. " "
+return command .. string.format(" %s ", message.translate("on_way"))
 end
 
 function speak_path(path)

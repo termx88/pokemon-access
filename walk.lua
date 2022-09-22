@@ -46,7 +46,7 @@ local starting_map_id = get_map_id()
 local was_facing = false
 read_on_way()
 for i = 1, walk_attempts, 1 do
-screen = get_screen()
+-- screen = get_screen()
 if not on_map() then 
 break
 end
@@ -145,7 +145,7 @@ end -- function
 
 -- Returns path in directional movement form as obtained from clean_path
 function get_path()
-screen = get_screen()
+-- screen = get_screen()
 local path
 if not on_map() then 
 return
@@ -156,7 +156,7 @@ reset_current_item_if_needed(info)
 local obj = info.objects[current_item]
 -- necessary in crystal, when player is walking and npc is one tile beyond the edge of screen
 -- the npc object contains wrong values
--- such as the x  and y both being -4 
+-- such as the x and y both being -4 
 if obj.x == -4 and obj.y == -4 then
 walk_wait(get_frames_press_walk())
 end
@@ -268,7 +268,7 @@ keys.down = true
 elseif key == "A" then
 keys.A = true
 end -- if
-screen = get_screen()
+-- screen = get_screen()
 if on_map() == false or joypad_key_pressed() then
 return
 end
@@ -287,7 +287,7 @@ end
 
 function walk_wait(frames)
 for i = 1, frames, 1 do
-screen = get_screen()
+-- screen = get_screen()
 if not on_map() or joypad_key_pressed() then 
 return
 end

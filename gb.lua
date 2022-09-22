@@ -357,6 +357,7 @@ tolk.output(message.translate("no_path"))
 return
 end
 speak_path(clean_path(path))
+return path
 end
 
 function has_talking_over_around(value, dir)
