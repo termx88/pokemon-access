@@ -46,7 +46,6 @@ local starting_map_id = get_map_id()
 local was_facing = false
 read_on_way()
 for i = 1, walk_attempts, 1 do
--- screen = get_screen()
 if not on_map() then 
 break
 end
@@ -145,7 +144,6 @@ end -- function
 
 -- Returns path in directional movement form as obtained from clean_path
 function get_path()
--- screen = get_screen()
 local path
 if not on_map() then 
 return
@@ -268,7 +266,6 @@ keys.down = true
 elseif key == "A" then
 keys.A = true
 end -- if
--- screen = get_screen()
 if on_map() == false or joypad_key_pressed() then
 return
 end
@@ -287,7 +284,6 @@ end
 
 function walk_wait(frames)
 for i = 1, frames, 1 do
--- screen = get_screen()
 if not on_map() or joypad_key_pressed() then 
 return
 end
