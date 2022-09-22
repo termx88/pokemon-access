@@ -20,7 +20,8 @@ camera_xy = {get_camera_xy()}
 walking_to_item = false
 local x = camera_xy[1]
 local y = camera_xy[2]
-if x < 0 or y < 0 
+-- doesn't allow fire red to move properly, might need to multiplt by 4?
+if x < 0 or y < 0
 or x >= memory.readbyte(RAM_MAP_WIDTH)*2 or y >= memory.readbyte(RAM_MAP_HEIGHT)*2 then
 tolk.output(message.translate("no_path"))
 return
