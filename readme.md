@@ -19,7 +19,7 @@ Deals with HM tiles appropriately by type. In Red/Blue/Yellow, HM tiles have to 
 * Because walking frame values are tweaked for individual games. In cases where walking values differ, such as crystal clear's bike, the walking is sub optimal, but does still work.
 * on_map function's changes don't perfectly filter out menus. In Red/Blue/Yellow's pokedex data screen, area map and town map returns true. Which crashes. In Gold/Silver/Crystal pokedex, maps, and PKHeX badges screen. Which doesn't crash, but it might start pressing buttons as if walking. It's possible to accidentally fly to a semi random location. Or change selection in flying map or pokedex.
 
-# Beyond here is the Standart Pokémon Access Readme
+# Beyond here is the Standart Pokémon Access Readme (with minor changes, such as an updated shortcut list)
 ## Introduction
 
 The Pokemon access project is an improved version of the Pokecrystal Access Project, a set of scripts which initially provided access to Pokémon Crystal for people using a screen reader.
