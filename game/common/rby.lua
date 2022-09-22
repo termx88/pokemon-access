@@ -11,6 +11,7 @@ land_collision_pairs = {}
 water_collision_pairs = {}
 water_tilesets = {}
 mansion_cliffs= {}
+warp_tiles = {}
 cut_tiles = {
 [0] = 0x3d,
 [7] = 0x50,
@@ -29,6 +30,8 @@ block_move = {
 [12] = {0x31, 0x31, 0x30, 0x30}
 }
 }
+BADGE_CUT = 2
+BADGE_SURF = 5
 
 function format_names(name)
 if name:match("[player]") then
@@ -43,9 +46,17 @@ end
 function update_impassable_tiles()
 for i=0x00, 0xff do
 if is_cut_tile(i) then
-impassable_tiles[i] = not pathfind_hm
+if pathfind_hm_available then
+impassable_tiles[i] = not has_badge(BADGE_CUT)
+else
+impassable_tiles[i] = not pathfind_hm_all
+end
 elseif is_water_tile(i) then
-impassable_tiles[i] = not pathfind_hm
+if pathfind_hm_available then
+impassable_tiles[i] = not has_badge(BADGE_SURF)
+else
+impassable_tiles[i] = not pathfind_hm_all
+end
 else
 impassable_tiles[i] = true
 end
@@ -76,13 +87,83 @@ end
 function on_map()
 local mapnumber = get_map_id()
 if mapnumber == 0xff 
-or memory.readbyte(RAM_IN_BATTLE) ~= 0
+or in_battle()
 or get_textbox_line()
 or screen.menu_position ~= nil then
+or screen.tile_lines[6]:find(textbox_top) and screen.tile_lines[12]:find(textbox_bottom)
 return false
 else
 return true
 end
+end
+
+function get_warp_tiles()
+local ptr = ROM_GENERAL_WARP_TILES
+for dir = DOWN, RIGHT, 4 do
+warp_tiles[0x20 +dir] = {}
+while memory.gbromreadbyte(ptr) ~= 0xFF do
+table.insert(warp_tiles[0x20 +dir], memory.gbromreadbyte(ptr))
+ptr = ptr +1
+end
+ptr = ptr +1
+end
+local special_tiles = {}
+local ptr = ROM_DOOR_TILES
+while memory.gbromreadbyte(ptr) ~= 0xFF do
+local index = memory.gbromreadbyte(ptr)
+special_tiles[index] = {}
+local doors = bit.bor(bit.band(memory.gbromreadword(ptr +1), 0x3FFF), bit.band(ROM_DOOR_TILES, 0xFFC000))
+while memory.gbromreadbyte(doors) ~= 0 do
+table.insert(special_tiles[index], memory.gbromreadbyte(doors))
+doors = doors +1
+end
+ptr = ptr +3
+end
+ptr = ROM_SPECIAL_WARP_TILES
+while memory.gbromreadbyte(ptr) ~= 0xFF do
+local index = memory.gbromreadbyte(ptr)
+if not special_tiles[index] then
+special_tiles[index] = {}
+end
+table.insert(special_tiles[index], memory.gbromreadbyte(ptr +1))
+ptr = ptr +3
+end
+ptr = ROM_WARP_TILES
+for i = 0, MAX_TILESETS -1 do
+warp_tiles[i] = get_rom_table(bit.bor(bit.band(memory.gbromreadword(ptr), 0x3FFF), bit.band(ROM_WARP_TILES, 0xFFC000)), 1)
+if special_tiles[i] then
+for _, v in pairs(special_tiles[i]) do
+table.insert(warp_tiles[i], v)
+end
+end
+ptr = ptr +2
+end
+end
+
+function is_warp_tile(x, y)
+local collisions = get_map_collisions()
+local tileset = memory.readbyte(RAM_MAP_HEADER)
+local mapid = get_map_id()
+if mapid == 0x63 and collisions[y][x] == 0x15 then
+return true
+end
+
+for dir = DOWN, RIGHT, 4 do
+for _, v in pairs(warp_tiles[dir +0x20]) do
+local dir_x, dir_y = decode_direction(dir)
+if v == collisions[y +dir_y][x +dir_x] then
+return true
+end
+end
+end
+
+for _, v in pairs(warp_tiles[tileset]) do
+if v == collisions[y][x] then
+return true
+end
+end
+
+return false
 end
 
 function get_warps()
@@ -97,11 +178,12 @@ for i = 1, warps do
 local start = warp_table_start+(4*(i-1))
 local warpy = memory.gbromreadbyte(start)
 local warpx = memory.gbromreadbyte(start+1)
+if on_map_limit(warpx, warpy) or is_warp_tile(warpx, warpy) then
+local name = message.translate("warp") .. i
 local mapid = memory.gbromreadbyte(start+3)
 if mapid == 0xff then
 mapid = memory.readbyte(RAM_LAST_MAP_OUTDOORS)
 end
-local name = message.translate("warp") .. i
 local mapname = get_map_name(mapid)
 if mapname ~= "" then
 name = mapname
@@ -109,6 +191,7 @@ end
 local warp = {x=warpx, y=warpy, name=name, type="warp", id="warp_" .. i}
 warp.name = get_name(current_mapid, warp)
 table.insert(results, warp)
+end
 end
 -- special Pokemon Mansion situation
 if memory.readbyte(RAM_MAP_NUMBER) == 0xd7 then
@@ -162,8 +245,7 @@ end
 local ptr = RAM_MAP_OBJECTS+16 -- skip the player
 local missable = get_missable()
 local results = {}
-local width = memory.readbyteunsigned(RAM_MAP_WIDTH)
-local height = memory.readbyteunsigned(RAM_MAP_HEIGHT)
+local width, height = get_map_dimensions()
 local mapid = get_map_id()
 for i = 1, 15 do
 local ignorable = false
@@ -217,6 +299,11 @@ table.insert(results, {name=message.translate("statue"), x=x, y=y, id="statue_" 
 -- special cinnabar gym
 elseif (mapid == 0xa6 and tileset_number == 0x16 and (collisions[y][x] == 0x4c and collisions[y][x-1] ~= 0x4c and collisions[y][x+2] ~= 0x4c)) then
 table.insert(results, {name=message.translate("quiz"), x=x, y=y, id="quiz_" .. y .. x, type="object", ignorable=true})
+elseif (tileset_number == 0x11 and collisions[y][x] == 0x22)
+or (tileset_number == 0x16 and collisions[y][x] == 0x11) then
+table.insert(results, {name=message.translate("hole"), x=x, y=y, id="hole_" .. y .. x, type="object"})
+elseif tileset_number == 0x11 and collisions[y][x] == 0x2d then
+table.insert(results, {name=message.translate("switch"), x=x, y=y, id="switch_" .. y .. x, type="object", ignorable=true})
 end
 end
 end
@@ -395,22 +482,22 @@ end
 return false
 end
 
-function get_hm_command(tile, last)
+function get_hm_command(node, last)
 local command = ""
 local count = true
-if is_cut_tile(tile) then
+if is_cut_tile(node.type) then
 command = message.translate("bush")
-elseif is_water_tile(tile) and not is_water_tile(last) and last ~= 0xff then
+elseif is_water_tile(node.type) and not is_water_tile(last.type) and last.type ~= 0xff then
 command = message.translate("enter_water")
 count = false
-elseif not is_water_tile(tile) and is_water_tile(last) and tile ~= 0xff then
+elseif not is_water_tile(node.type) and is_water_tile(last.type) and node.type ~= 0xff then
 command = message.translate("exit_water")
 count = false
 end
 return command, count
 end
 
-valid_path = function (node, neighbor)
+ function valid_path(node, neighbor)
 for dir = DOWN, RIGHT, 4 do
 local dir_x, dir_y = decode_direction(dir)
 dir_x = dir_x + dir_x
@@ -436,40 +523,32 @@ end -- valid
 function play_tile_sound(type, pan, vol, is_camera)
 local tileset = memory.readbyte(RAM_MAP_HEADER)
 	if type == memory.readbyte(RAM_GRASS_TILE) then
-		audio.play(scriptpath .. "sounds\\s_grass.wav", 0, pan, vol)
+		audio.play(scriptpath .. "sounds\\gb\\s_grass.wav", 0, pan, vol)
 	elseif is_cut_tile(type) then
-		audio.play(scriptpath .. "sounds\\s_cut.wav", 0, pan, vol)
+		audio.play(scriptpath .. "sounds\\gb\\s_cut.wav", 0, pan, vol)
 	elseif is_water_tile(type) then
-		audio.play(scriptpath .. "sounds\\s_water.wav", 0, pan, vol)
+		audio.play(scriptpath .. "sounds\\common\\s_water.wav", 0, pan, vol)
 	elseif is_block_arrow(tileset, DOWN) then
-		audio.play(scriptpath .. "sounds\\s_move_down.wav", 0, pan, vol)
+		audio.play(scriptpath .. "sounds\\common\\s_move_down.wav", 0, pan, vol)
 elseif is_block_arrow(tileset, UP) then
-		audio.play(scriptpath .. "sounds\\s_move_up.wav", 0, pan, vol)
+		audio.play(scriptpath .. "sounds\\common\\s_move_up.wav", 0, pan, vol)
 elseif is_block_arrow(tileset, LEFT) then
-		audio.play(scriptpath .. "sounds\\s_move.wav", 0, -100, vol)
+		audio.play(scriptpath .. "sounds\\common\\s_move.wav", 0, -100, vol)
 elseif is_block_arrow(tileset, RIGHT) then
-		audio.play(scriptpath .. "sounds\\s_move.wav", 0, 100, vol)
+		audio.play(scriptpath .. "sounds\\common\\s_move.wav", 0, 100, vol)
 elseif is_camera and ((tileset == 0x16 and type == 0x5e)
 or (tileset == 0x07 and type == 0x3f)) then
-		audio.play(scriptpath .. "sounds\\no_pass.wav", 0, pan, vol)
--- 	elseif type == 0x23 then
--- 		audio.play(scriptpath .. "sounds\\s_ice.wav", 0, pan, vol)
--- 	elseif type == 0x24 then
--- 		audio.play(scriptpath .. "sounds\\s_whirl.wav", 0, pan, vol)
--- 	elseif type == 0x29 then
--- 		audio.play(scriptpath .. "sounds\\s_water.wav", 0, pan, vol)
--- 	elseif type == 0x33 then
--- 		audio.play(scriptpath .. "sounds\\s_waterfall.wav", 0, pan, vol)
-	elseif is_camera and (type == 0x13) then
-		audio.play(scriptpath .. "sounds\\s_stairup.wav", 0, pan, vol)
+		audio.play(scriptpath .. "sounds\\common\\no_pass.wav", 0, pan, vol)
+	elseif is_camera and (type == 0x13 or type == 0x43) then
+		audio.play(scriptpath .. "sounds\\common\\s_stairup.wav", 0, pan, vol)
 	elseif is_camera and (type == 0x1b) then
-		audio.play(scriptpath .. "sounds\\s_stairdown.wav", 0, pan, vol)
+		audio.play(scriptpath .. "sounds\\common\\s_stairdown.wav", 0, pan, vol)
 	elseif is_camera and tileset == 0x11 and type == 0x22 then
-		audio.play(scriptpath .. "sounds\\s_hole.wav", 0, pan, vol)
+		audio.play(scriptpath .. "sounds\\common\\s_hole.wav", 0, pan, vol)
 	elseif is_camera and tileset == 0x11 and type == 0x2d then
-		audio.play(scriptpath .. "sounds\\s_switch.wav", 0, pan, vol)
+		audio.play(scriptpath .. "sounds\\common\\s_switch.wav", 0, pan, vol)
 	else
-		audio.play(scriptpath .. "sounds\\s_default.wav", 0, pan, vol)
+		audio.play(scriptpath .. "sounds\\gb\\s_default.wav", 0, pan, vol)
 	end -- switch tile type
 local x, y = nil
 if is_camera then
@@ -479,7 +558,7 @@ x, y = get_player_xy()
 end
 
 if check_preledge(get_map_collisions(), y, x) then
-audio.play(scriptpath .. "sounds\\s_mad.wav", 0, pan, vol)
+audio.play(scriptpath .. "sounds\\common\\s_mad.wav", 0, pan, vol)
 end
 end
 
@@ -573,6 +652,7 @@ camera_y = -7
 play_tile_sound(type, 0, 30, false)
 end
 end)
+table.insert(callback_functions, ROM_FOOTSTEP_FUNCTION)
 
 -- initialize tables based in rom values
 ledge_tiles = get_rom_table(ROM_LEDGE_TILES, 4)
