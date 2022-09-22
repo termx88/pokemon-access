@@ -15,7 +15,7 @@ Deals with HM tiles appropriately by type. In Red/Blue/Yellow, HM tiles have to 
 ### Known problems of the script
 * New messages are untranslated.
 * In Yellow will walk into player's pikachu before activating it. When pikachu is standing on an entrance, this results in walking into a building. Haven't filter out destination by sprite, because there are non-player pikachu.
-* Camera can't walk beyond a map connection. (reading path results in crash in this and 3.0.1)
+* Camera can't walk beyond a map connection. Results in crash.
 * Because walking frame values are tweaked for individual games. In cases where walking values differ, such as crystal clear's bike, the walking is sub optimal, but does still work.
 * on_map function's changes don't perfectly filter out menus. In Red/Blue/Yellow's pokedex data screen, area map and town map returns true. Which crashes. In Gold/Silver/Crystal pokedex, maps, and PKHeX badges screen. Which doesn't crash, but it might start pressing buttons as if walking. It's possible to accidentally fly to a semi random location. Or change selection in flying map or pokedex.
 
